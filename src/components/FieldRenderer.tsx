@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 type Props = {
   name: string;
@@ -17,7 +17,6 @@ export default function FieldRenderer({name, uiType, label, value, onChange}: Pr
       </div>
     );
   }
-  // default input
   return (
     <div className="mb-2">
       <label className="block text-sm">{label}</label>

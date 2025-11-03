@@ -1,73 +1,117 @@
-# React + TypeScript + Vite
+# Care4Me Web - Technical Assignment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a **React + TypeScript + TailwindCSS** based customer search application built for the **Care4Me technical assignment**.  
+It demonstrates a **configuration-driven UI**, **mock API (JSON Server)**, and **dynamic search** supporting **nested object filtering**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
+- **React + TypeScript (Vite)** — Frontend framework and tooling
+- **TailwindCSS** — Utility-first CSS for styling
+- **Axios** — API communication layer
+- **JSON Server** — Mock REST API for customer data
+- **Config-driven rendering** — All form fields and display columns defined via configuration
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+##  Setup Instructions
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 1. Clone and Install Dependencies
+```bash
+git clone https://github.com/santlalkaler/care4me_web.git
+cd care4me_web
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Setup Mock API (JSON Server)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Setup Mock API (JSON Server)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Run the mock API:
+npm run json-server
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Run the Frontend
+npm run dev
+
+
+### How It Works
+1. Configuration-driven UI
+
+All form fields are defined in a single config file (searchConfig.ts):
+
+``ts
+export const searchConfig = {
+  fields: {
+    firstName: { uiType: 'input', label: 'First Name', renderOrder: 1, name: 'firstName' },
+    lastName:  { uiType: 'input', label: 'Last Name', renderOrder: 2, name: 'lastName' },
+    dateOfBirth: { uiType: 'date', label: 'Date of Birth', renderOrder: 3, name: 'dateOfBirth' },
+  }
+};
+
+
+Adding or removing fields requires no code change — only update this config.
+
+2. Dynamic Form Rendering
+
+SearchForm.tsx iterates over the config and renders input fields using a generic component FieldRenderer.tsx.
+
+{fields.map(f => (
+  <FieldRenderer
+    key={f.name}
+    name={f.name}
+    uiType={f.uiType}
+    label={f.label}
+    value={form[f.name]}
+    onChange={setField}
+  />
+))}
+
+The FieldRenderer component decides which input type to render (text, date, select, etc.)
+based on uiType.
+
+3. API Call + Case-insensitive Search
+
+api.ts automatically converts all search parameters into _like queries (for regex-based case-insensitive match).
+
+Object.entries(params).forEach(([key, value]) => {
+  if (value?.trim()) query[`${key}_like`] = value.trim();
+});
+const res = await api.get('/customers', { params: query });
+
+So firstName=jo will match “John”, “JOHN”, “joHN”, etc.
+
+4. Result Display
+ResultsList.tsx uses a small config array defining what columns to show:
+const displayConfig = [
+  { key: 'name', label: 'Name', render: (c) => `${c.firstName} ${c.lastName}` },
+  { key: 'dob', label: 'DOB', render: (c) => c.dateOfBirth },
+  { key: 'city', label: 'City', render: (c) => c.addresses?.[0]?.city || '—' }
+];
+
+
+Example Flow
+
+User enters firstName = john
+
+Form sends { firstName_like: "john" } to API
+
+API returns all “John” records
+
+Results displayed dynamically
+
+Key Features
+
+Configurable UI (add fields without touching React code)
+ Case-insensitive and partial match search
+ Nested object filtering (addresses, phones, etc.)
+ TypeScript for type safety
+ TailwindCSS for clean, fast styling
+ Works fully offline with JSON Server mock API
+
+
+
+
+
