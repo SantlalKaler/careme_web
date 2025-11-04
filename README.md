@@ -1,118 +1,217 @@
-# Care4Me Web - Technical Assignment
+#  Care4Me Web
 
-This is a **React + TypeScript + TailwindCSS** based customer search application built for the **Care4Me technical assignment**.  
-It demonstrates a **configuration-driven UI**, **mock API (JSON Server)**, and **dynamic search** supporting **nested object filtering**.
+A **configuration-driven React + TypeScript** web application that dynamically builds and filters customer data using reusable UI logic — built as part of the Care4Me ecosystem.
 
----
+| Splash Screen | Home Screen | Search Screen |
+|----------------|----------------|------------------|
+| ![Splash Screen](assets/screenshots/splash.png) | ![Home Screent](assets/screenshots/home.png) | ![Search Screen](assets/screenshots/search.png) |
 
-## Tech Stack
-- **React + TypeScript (Vite)** — Frontend framework and tooling
-- **TailwindCSS** — Utility-first CSS for styling
-- **Axios** — API communication layer
-- **JSON Server** — Mock REST API for customer data
-- **Config-driven rendering** — All form fields and display columns defined via configuration
+| DOB Filter | First Name Filter | Details Screen |
+|-----------------|--------------|------------------|
+| ![Filter Screen](assets/screenshots/filter.png) | ![Filter Screen](assets/screenshots/filtername.png) | ![Details Screen](assets/screenshots/details.png) |
 
 ---
 
+## 🚀 Tech Stack
+
+| Category | Tools / Libraries |
+|-----------|-------------------|
+| **Framework** | React 19 + TypeScript |
+| **Styling** | TailwindCSS + shadcn |
+| **Routing** | React Router DOM v7 |
+| **API / HTTP** | Axios |
+| **Mock Server** | JSON Server |
+| **Date Utilities** | date-fns |
+| **Icons** | Lucide-react |
 
 ---
 
-##  Setup Instructions
+## ⚙️ Local Setup
 
-### Clone and Install Dependencies
+### 1️⃣ Clone & Install
 ```bash
-git clone https://github.com/santlalkaler/careme_web.git
-cd care4me_web
+git clone https://github.com/santlalkaler/care4me_web.git
+cd care4me-web
 npm install
-
-Setup Mock API (JSON Server)
 ```
 
-### Setup Mock API (JSON Server)
+### 2️⃣ Run the Mock API
+Start JSON Server (with your existing db.json):
+```bash
+npx json-server --watch db.json --port 3001
+```
 
-Run the mock API:
-npm run json-server
 
-Run the Frontend
+### 3️⃣ Start the React App
+```bash
 npm run dev
 
+```
+App will be available at http://localhost:5173/
+API runs at http://localhost:3001/
 
-### How It Works
-## 1. Configuration-driven UI
+### 🧱 Folder Structure
+```bash
+src/
+ ├─ components/            # Reusable UI components (Header, SearchBar, etc.)
+ ├─ config/                # Configuration files (searchConfig.ts)
+ ├─ models/                # TypeScript interfaces (Customer, Address, etc.)
+ ├─ pages/                 # Page-level components
+ ├─ App.tsx
+ └─ main.tsx
+```
 
-All form fields are defined in a single config file (searchConfig.ts):
-
+### 🧩 Configuration-Driven Search
+The entire search form and filter behavior are powered by the config object searchConfig.ts.
 ```ts
-export const searchConfig = {
-  fields: {
-    firstName: { uiType: 'input', label: 'First Name', renderOrder: 1, name: 'firstName' },
-    lastName:  { uiType: 'input', label: 'Last Name', renderOrder: 2, name: 'lastName' },
-    dateOfBirth: { uiType: 'date', label: 'Date of Birth', renderOrder: 3, name: 'dateOfBirth' },
-  }
+export const searchConfig: Record<string, FieldConfig> = {
+  firstName: {
+    key: "firstName",
+    type: "text",
+    label: "First Name",
+    placeholder: "Enter first name",
+    renderOrder: 1,
+  },
+  lastName: {
+    key: "lastName",
+    type: "text",
+    label: "Last Name",
+    placeholder: "Enter last name",
+    renderOrder: 2,
+  },
+  dateOfBirth: {
+    key: "dateOfBirth",
+    type: "date",
+    label: "Date of Birth",
+    placeholder: "Select date",
+    renderOrder: 3,
+  },
 };
+
 ```
 
+### 🔍 Field Model
+```ts
+export interface FieldConfig {
+  key: string;
+  label: string;
+  type: "text" | "date";
+  placeholder?: string;
+  renderOrder: number;
+}
 
-Adding or removing fields requires no code change — only update this config.
 
-## 2. Dynamic Form Rendering
-
-SearchForm.tsx iterates over the config and renders input fields using a generic component FieldRenderer.tsx.
-
-```tsX
-{fields.map(f => (
-  <FieldRenderer
-    key={f.name}
-    name={f.name}
-    uiType={f.uiType}
-    label={f.label}
-    value={form[f.name]}
-    onChange={setField}
-  />
-))}
 ```
 
-The FieldRenderer component decides which input type to render (text, date, select, etc.)
-based on uiType.
+### 🧠 Filtering Logic
 
-## 3. API Call + Case-insensitive Search
-
-api.ts automatically converts all search parameters into _like queries (for regex-based case-insensitive match).
+The filtering is fully dynamic — it adapts based on the configuration and supports nested fields like addresses.city or phones.number.
 
 ```ts
-Object.entries(params).forEach(([key, value]) => {
-  if (value?.trim()) query[`${key}_like`] = value.trim();
-});
-const res = await api.get('/customers', { params: query });
+function getFieldValue(obj: any, path: string): any {
+  const parts = path.split(".");
+  let value = obj;
+
+  for (const part of parts) {
+    if (Array.isArray(value)) {
+      value = value.map(v => v[part]).filter(v => v !== undefined);
+      if (value.length === 1) value = value[0];
+    } else if (value && typeof value === "object") {
+      value = value[part];
+    } else return undefined;
+  }
+  return value;
+}
+
+const handleFilter = (key: string, value: string) => {
+  const updated = { ...filters, [key]: value.trim().toLowerCase() };
+  setFilters(updated);
+
+  let filtered = customers;
+
+  Object.entries(updated).forEach(([k, v]) => {
+    if (!v) return;
+    const fieldConfig = searchConfig[k];
+    if (!fieldConfig) return;
+
+    filtered = filtered.filter((c) => {
+      const rawValue = getFieldValue(c, fieldConfig.key);
+      if (!rawValue) return false;
+
+      const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+      return values.some((val) => {
+        const customerValue = String(val).toLowerCase();
+        return fieldConfig.type === "text"
+          ? customerValue.includes(v)
+          : customerValue === v;
+      });
+    });
+  });
+
+  setFilteredCustomers(filtered);
+};
+
+```
+✅ Works seamlessly for nested arrays (addresses, phones, etc.)
+✅ Fully reusable with just config updates — no code change needed
+
+### 🧾 Sample Schema (db.json)
+```json
+{
+  "customers": [
+    {
+      "id": "cust-001",
+      "firstName": "John",
+      "lastName": "Smith",
+      "dateOfBirth": "1985-03-15",
+      "maritalStatus": "Married",
+      "secureId": "12345",
+      "addresses": [
+        {
+          "id": "addr-001",
+          "type": "Home",
+          "street": "123 Main St",
+          "city": "New York",
+          "state": "NY",
+          "zipCode": "10001"
+        }
+      ],
+      "phones": [
+        {
+          "id": "ph-001",
+          "type": "Mobile",
+          "number": "9876543210"
+        }
+      ],
+      "emails": [
+        {
+          "id": "em-001",
+          "isPrimary": true,
+          "email": "john@example.com"
+        }
+      ]
+    }
+  ]
+}
+
 ```
 
-So firstName=jo will match “John”, “JOHN”, “joHN”, etc.
+### 🕒 Development Time
 
-## 4. Result Display
-ResultsList.tsx uses a small config array defining what columns to show:
-```tsX
-const displayConfig = [
-  { key: 'name', label: 'Name', render: (c) => `${c.firstName} ${c.lastName}` },
-  { key: 'dob', label: 'DOB', render: (c) => c.dateOfBirth },
-  { key: 'city', label: 'City', render: (c) => c.addresses?.[0]?.city || '—' }
-];
-```
-
-### Example Flow
-> - User enters firstName = john
-> - Form sends { firstName_like: "john" } to API
-> - API returns all “John” records
-> - Results displayed dynamically
-
-## Key Features
-> - Configurable UI (add fields without touching React code)
- > - Case-insensitive and partial match search
- > - Nested object filtering (addresses, phones, etc.)
- > - TypeScript for type safety
- > - TailwindCSS for clean, fast styling
- > - Works fully offline with JSON Server mock API
+~2 days total (including setup, API integration, dynamic filter logic, and responsive UI)
 
 
+### 🧩 Key Highlights
+
+✅ Config-driven architecture — zero code changes for new filters
+
+✅ Handles nested relational data gracefully
+
+✅ Reusable, minimalist components with shadcn + Tailwind
+
+✅ Works seamlessly with existing JSON Server data
+
+✅ Fully type-safe (TypeScript)
 
 
 
