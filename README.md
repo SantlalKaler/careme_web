@@ -2,13 +2,9 @@
 
 A **configuration-driven React + TypeScript** web application that dynamically builds and filters customer data using reusable UI logic — built as part of the Care4Me ecosystem.
 
-| Splash Screen | Home Screen | Search Screen |
-|----------------|----------------|------------------|
-| ![Splash Screen](assets/screenshots/splash.png) | ![Home Screent](assets/screenshots/home.png) | ![Search Screen](assets/screenshots/search.png) |
-
-| DOB Filter | First Name Filter | Details Screen |
-|-----------------|--------------|------------------|
-| ![Filter Screen](assets/screenshots/filter.png) | ![Filter Screen](assets/screenshots/filtername.png) | ![Details Screen](assets/screenshots/details.png) |
+Home Screen | Search Screen | Filter |  Details Screen |
+|----------------|----------------|------------------|------------------|
+| ![Home Screent](src/assets/screenshots/home.png) | ![Search Screen](src/assets/screenshots/search.png)  |  ![Filter Screen](src/assets/screenshots/filtername.png)  | ![Details Screen](src/assets/screenshots/details.png) |
 
 ---
 
