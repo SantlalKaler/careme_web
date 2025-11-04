@@ -1,10 +1,46 @@
-export type UIType = 'input' | 'date' | 'select';
+import type { FieldConfig } from "@/models/FieldConfig";
 
-export const searchConfig = {
-  fields: {
-    firstName: { uiType: 'input' as UIType, label: 'First Name', renderOrder: 1, name: 'firstName' },
-    lastName:  { uiType: 'input' as UIType, label: 'Last Name',  renderOrder: 2, name: 'lastName' },
-    dateOfBirth: { uiType: 'date' as UIType, label: 'Date of Birth', renderOrder: 3, name: 'dateOfBirth' },
-    // maritalStatus: { uiType: 'input' as UIType, label: 'Marital Status', renderOrder: 4, name: 'maritalStatus' },
-  }
-};
+export const searchConfig: Record<string, FieldConfig> = {
+  firstName: {
+    key: "firstName",
+    type: "text",
+    label: 'First Name',
+    placeholder: 'Enter first name',
+    renderOrder: 1,
+  },
+  lastName: {
+    key: "lastName",
+    type: "text",
+    label: 'Last Name',
+    placeholder: 'Enter last name',
+    renderOrder: 2,
+  },
+  dateOfBirth: {
+    key: "dateOfBirth",
+    label: "Date of Birth",
+    type: "date",
+    placeholder: "Select date",
+    renderOrder: 3,
+  },
+  // maritalStatus: {
+  //   key: "maritalStatus",
+  //   label: "Marital Status",
+  //   type: "text",
+  //   placeholder: "Enter marital status",
+  //   renderOrder: 4,
+  // },
+  // addressescity: {
+  //   key: "addresses.city",
+  //   label: "City",
+  //   type: "text",
+  //   placeholder: "Enter City",
+  //   renderOrder: 5,
+  // },
+  // number: {
+  //   key: "phones.number",
+  //   label: "Phone Number",
+  //   type: "text",
+  //   placeholder: "Enter Phone Number",
+  //   renderOrder: 6,
+  // },
+}
